@@ -1,0 +1,59 @@
+name: CD
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  prepare_release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Important for Changesets to detect changes correctly
+
+      - name: Use Node.js (Latest Stable Version)
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'node'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create and Push Changeset Release Pull Request
+        uses: changesets/action@v1
+        with:
+          version: true
+          commit: '[ci skip] Version Packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: prepare_release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'node'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

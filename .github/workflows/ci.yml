@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+    branches: 
+      - '*'
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+
+      - name: Use Node.js (Latest Stable Version)
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'node'
+          # This will use the latest stable Node.js version
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+        # This ensures you are using the latest npm version
+          
+      - name: Install dependencies
+        run: npm cache clean --force && npm ci
+        # If you use npm@7 or later, you might need to add --legacy-peer-deps option to npm ci
+
+      - name: Run lint
+        run: npm run lint
+       
+      - name: Run Tests With Coverage
+        run: npm run test:coverage
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: coverage/coverage-final.json
+        
