@@ -18,6 +18,13 @@ class validationError{
         return Object.getOwnPropertyNames(this.constraints).length > 0 ;
     }
 
+    toJson(){
+        return {
+            property: this.property,
+            constraints: Object.getOwnPropertyNames(this.constraints).map(key => (this.constraints[key])),
+        }
+    }
+
 }
 
 export {
